@@ -1,0 +1,21 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Todo",
+            "type": "shell",
+            "command": "gcc",
+            "args": [
+                "-g",
+                "Final.c",
+                "cJSON.c",
+                "-o",
+                "final"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
