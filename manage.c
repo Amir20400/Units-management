@@ -12,8 +12,7 @@ char *week[5]={"saturday","sunday","monday","tuesday","wensday"};
 struct day
 {
     int day_name;
-    int hour;
-    int minute;
+    int time_name;
 };
 
 struct deadline 
@@ -63,15 +62,17 @@ void edit_date(struct unit *vahed,WINDOW *win)
 
         werase(win);
         mvwprintw(win,0,0,"enter the hour: ");
-        char *hour=malloc(10*sizeof(char));
-        wgetstr(win,hour);
-        vahed->date[i].hour=atoi(hour);
-
-        werase(win);
-        mvwprintw(win,0,0,"enter the minute: ");
-        char *minute=malloc(10*sizeof(char));
-        wgetstr(win,minute);
-        vahed->date[i].minute=atoi(minute);
+        mvwprintw(win,1,0,"1. 7/30-9");
+        mvwprintw(win,2,0,"2. 9-10/30");
+        mvwprintw(win,3,0,"3. 10/30-12");
+        mvwprintw(win,4,0,"4. 12-13");
+        mvwprintw(win,5,0,"5. 13-14/30");
+        mvwprintw(win,6,0,"6. 14/30-16");
+        mvwprintw(win,7,0,"7. 16-17/30\n");
+        char *time_name=malloc(10*sizeof(char));
+        wgetstr(win,time_name);
+        vahed->date[i].time_name=atoi(time_name);
+        
     }
 }
 
@@ -130,7 +131,7 @@ struct unit add_unit(WINDOW *win)
     vahed.date=malloc(vahed.days_number*sizeof(struct day));
     edit_date(&vahed,win);
 
-    //adding final exam
+    // adding final exam
     werase(win);
     mvwprintw(win,0,0,"enter the final exam date: ");
     edit_final_exam_date(&vahed,win);
@@ -139,13 +140,19 @@ struct unit add_unit(WINDOW *win)
     return vahed;
 }
 
-int finding_time(struct unit vahed, int j)
+void delete_unit(struct unit *vaheds,int position)
 {
-    int array_time[7]={450,540,630,720,780,870,960};
-    for(int i=0; i<7; i++)
+    free(vaheds[position].name);
+    free(vaheds[position].teacher);
+    free(vaheds[position].date);
+    for(int i=position; i<number_of_units-1; i++)
     {
-        if((vahed.date[j].hour*60+vahed.date[j].minute)==array_time[i]) return i;
+        struct unit temp=vaheds[i+1];
+        vaheds[i+1]=vaheds[i];
+        vaheds[i]=temp;
     }
+    number_of_units--;
+    vaheds=realloc(vaheds,number_of_units*sizeof(struct unit));
 }
 
 void display(struct unit *vaheds)
@@ -176,13 +183,14 @@ void display(struct unit *vaheds)
     wbkgd(win_tuesday,COLOR_PAIR(1));
     wbkgd(win_wensday,COLOR_PAIR(1));
 
-    box(win,0,0);
+
     box(win_time,0,0);
     box(win_saturday,0,0);
     box(win_sunday,0,0);
     box(win_monday,0,0);
     box(win_tuesday,0,0);
     box(win_wensday,0,0);
+
 
     vaheds[0]=add_unit(win);
 
@@ -208,12 +216,48 @@ void display(struct unit *vaheds)
     wrefresh(win_tuesday);
     wrefresh(win_wensday);
 
-    // wgetch(win_saturday);
 
     int choice=-1;
 
-    while(choice !='e')
+    while(choice !='q')
     {
+        werase(win);
+        werase(win_saturday);
+        werase(win_sunday);
+        werase(win_monday);
+        werase(win_tuesday);
+        werase(win_wensday);
+
+
+        box(win_time,0,0);
+        box(win_saturday,0,0);
+        box(win_sunday,0,0);
+        box(win_monday,0,0);
+        box(win_tuesday,0,0);
+        box(win_wensday,0,0);
+
+        mvwprintw(win_saturday,0,2,"Saturday");
+        mvwprintw(win_sunday,0,2,"Sunday");
+        mvwprintw(win_monday,0,2,"Monday");
+        mvwprintw(win_tuesday,0,2,"Tuesday");
+        mvwprintw(win_wensday,0,2,"wednesday");
+
+        mvwprintw(win_time,2,20,"7/30 - 9");
+        mvwprintw(win_time,2,38,"9 - 10/30");
+        mvwprintw(win_time,2,56,"10/30 - 12");
+        mvwprintw(win_time,2,74," 12 - 13");
+        mvwprintw(win_time,2,92,"13 - 14/30");
+        mvwprintw(win_time,2,110,"14/30-16");
+        mvwprintw(win_time,2,128,"16 - 17/30");
+
+        wrefresh(win);
+        wrefresh(win_time);
+        wrefresh(win_saturday);
+        wrefresh(win_sunday);
+        wrefresh(win_monday);
+        wrefresh(win_tuesday);
+        wrefresh(win_wensday);
+
         for(int i=0; i<number_of_units; i++)
         {
             for(int j=0; j<vaheds[i].days_number; j++)
@@ -222,16 +266,91 @@ void display(struct unit *vaheds)
                 {
                     if(vaheds[i].date[j].day_name==(k+1))
                     {
-                        int position=finding_time(vaheds[i],j);
-                        mvwprintw(win_array[k],1,23+position*18,"%s",vaheds[i].name);
-                        mvwprintw(win_array[k],2,23+position*18,"%s",vaheds[i].teacher);
+                        int position=vaheds[i].date[j].time_name-1;
+                        wattron(win_array[k],A_BOLD);
+                        mvwprintw(win_array[k],1,22+position*18,"%s",vaheds[i].name);
+                        wattroff(win_array[k],A_BOLD);
+                        mvwprintw(win_array[k],3,22+position*18,"%s",vaheds[i].teacher);
+                        mvwprintw(win_array[k],4,22+position*18,"%d/%d/%d",vaheds[i].final_exam.year,vaheds[i].final_exam.month,vaheds[i].final_exam.day);
+                        mvwprintw(win_array[k],5,22+position*18,"%d.%d",vaheds[i].final_exam.hour,vaheds[i].final_exam.minutes);
                         wrefresh(win_array[k]);
                     }
                 }
             }
         }
+
         noecho();
         choice=wgetch(win_saturday);
+        switch(choice)
+        {
+            //adding task;
+            case 'a':
+                echo();
+                vaheds=realloc(vaheds,(number_of_units+1)*sizeof(struct unit));
+                vaheds[number_of_units]=add_unit(win);
+                werase(win);
+                noecho();
+                break;
+            
+            //enable editing
+            case 'e':
+                noecho();
+                int highlight_edit=0;
+                int choice_edit=-1;
+               
+
+                while(choice_edit !='e')
+                {
+                    WINDOW *win_edit=newwin(47,160,0,0);
+                    wbkgd(win_edit,COLOR_PAIR(1)); 
+                    wrefresh(win_edit);
+
+                    for(int i=0; i<number_of_units; i++)
+                    {
+                        if(i==highlight_edit) wattron(win_edit,A_REVERSE);
+                        mvwprintw(win_edit,i,0,"%d. %s",i+1,vaheds[i].name);
+                        wattroff(win_edit,A_REVERSE);
+                    }
+
+
+                    choice_edit=wgetch(win_edit);
+                    switch(choice_edit)
+                    {
+                        case 's':
+                            highlight_edit++;
+                            if(highlight_edit==number_of_units) highlight_edit=number_of_units-1;
+                            break;
+
+                        case 'w':
+                            highlight_edit--;
+                            if(highlight_edit==-1) highlight_edit=0;
+                            break;
+
+                        case 'f':
+                            echo();
+                            werase(win);
+                            edit_final_exam_date(&vaheds[highlight_edit],win);
+                            werase(win);
+                            noecho();
+                            break;
+
+                        case 't':
+                            echo();
+                            edit_date(&vaheds[highlight_edit],win);
+                            werase(win);
+                            noecho();
+                            break;
+
+                        case 'd':
+                            delete_unit(vaheds,highlight_edit);
+                            break;
+                    }
+                    werase(win_edit);
+                }
+                break;
+            
+            
+        }
     }
 
 }
