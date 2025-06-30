@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<ncurses.h>
+#include"cJSON.h"
 
 #define COLOR_DARK_GRAY 8
 #define COLOR_YELLOW_BROWN 9
@@ -155,6 +156,115 @@ void delete_unit(struct unit *vaheds,int position)
     vaheds=realloc(vaheds,number_of_units*sizeof(struct unit));
 }
 
+void save_to_jason(struct unit *vaheds, const char *file_name)
+{
+    cJSON *json_array = cJSON_CreateArray();
+    for(int i=0; i<number_of_units; i++)
+    {
+        cJSON *units_obj = cJSON_CreateObject();
+        cJSON_AddStringToObject(units_obj,"name",vaheds[i].name);
+        cJSON_AddStringToObject(units_obj,"teacher",vaheds[i].teacher);
+
+        cJSON *final_exam_time = cJSON_CreateObject();
+        cJSON_AddNumberToObject(final_exam_time,"year",vaheds[i].final_exam.year);
+        cJSON_AddNumberToObject(final_exam_time,"month",vaheds[i].final_exam.month);
+        cJSON_AddNumberToObject(final_exam_time,"day",vaheds[i].final_exam.day);
+        cJSON_AddNumberToObject(final_exam_time,"hour",vaheds[i].final_exam.hour);
+        cJSON_AddNumberToObject(final_exam_time,"minutes",vaheds[i].final_exam.minutes);
+        cJSON_AddItemToObject(units_obj,"final exam",final_exam_time);
+
+        cJSON *date_array = cJSON_CreateArray();
+        for(int j=0; j<vaheds[i].days_number; j++)
+        {
+            cJSON *date_obj=cJSON_CreateObject();
+            cJSON_AddNumberToObject(date_obj,"day name",vaheds[i].date[j].day_name);
+            cJSON_AddNumberToObject(date_obj,"time name",vaheds[i].date[j].time_name);
+            cJSON_AddItemToArray(date_array,date_obj);
+        }
+        cJSON_AddItemToObject(units_obj,"date",date_array);
+
+        cJSON_AddItemToArray(json_array,units_obj);
+    }
+
+    char *json_string = cJSON_Print(json_array);
+    FILE *file = fopen(file_name, "w");
+    if(file!=NULL)
+    {
+        fprintf(file, "%s", json_string);
+        fclose(file);
+    }
+    free(json_string);
+    cJSON_Delete(json_array);
+}
+
+struct unit* load_json(const char*file_name, int *number_of_units)
+{
+    FILE *file= fopen(file_name,"r");
+    if(!file)
+    {
+        return NULL;
+    }
+
+    
+    fseek(file,0,SEEK_END);
+    long file_size=ftell(file);
+    fseek(file,0,SEEK_SET);
+
+    char *json_string = malloc((file_size+1)*sizeof(char));
+    fread(json_string,1,file_size,file);
+    json_string[file_size]='\0';
+    fclose(file);
+
+    cJSON *json_array=cJSON_Parse(json_string);
+    free(json_string);
+    
+    if(!json_array || !cJSON_IsArray(json_array))
+    {
+        return NULL;
+    }
+
+    struct unit *vaheds;
+    *number_of_units = cJSON_GetArraySize(json_array);
+    vaheds=malloc(*number_of_units*sizeof(struct unit));
+    
+    for(int i=0; i<*number_of_units; i++)
+    {
+        cJSON *unit_obj = cJSON_GetArrayItem(json_array,i);
+
+        cJSON *name = cJSON_GetObjectItem(unit_obj,"name");
+        vaheds[i].name = strdup(name ? name->valuestring : "");
+        
+        cJSON *teacher = cJSON_GetObjectItem(unit_obj,"teacher");
+        vaheds[i].teacher = strdup(teacher ? teacher->valuestring : "");
+
+        cJSON *final_exam_obj = cJSON_GetObjectItem(unit_obj,"final exam");
+        vaheds[i].final_exam.year = cJSON_GetObjectItem(final_exam_obj, "year")->valueint;
+        vaheds[i].final_exam.month = cJSON_GetObjectItem(final_exam_obj,"month")->valueint;
+        vaheds[i].final_exam.day = cJSON_GetObjectItem(final_exam_obj,"day")->valueint;
+        vaheds[i].final_exam.hour = cJSON_GetObjectItem(final_exam_obj,"hour")->valueint;
+        vaheds[i].final_exam.minutes = cJSON_GetObjectItem(final_exam_obj,"minutes")->valueint;
+
+        cJSON *date_array = cJSON_GetObjectItem(unit_obj,"date");
+        if(date_array && cJSON_IsArray(date_array))
+        {
+            vaheds[i].days_number = cJSON_GetArraySize(date_array);
+            vaheds[i].date = malloc(vaheds[i].days_number*sizeof(struct day));
+
+            for(int j=0; j<vaheds[i].days_number; j++)
+            {
+                cJSON *date_obj = cJSON_GetArrayItem(date_array,j);
+                vaheds[i].date[j].day_name = cJSON_GetObjectItem(date_obj,"day name")->valueint;
+                vaheds[i].date[j].time_name = cJSON_GetObjectItem(date_obj,"time name")->valueint;
+
+            }
+        } 
+    }
+
+    cJSON_Delete(json_array);
+    return vaheds;
+
+}
+
 void display(struct unit *vaheds)
 {
     initscr();
@@ -165,13 +275,14 @@ void display(struct unit *vaheds)
     init_pair(1, COLOR_YELLOW_BROWN, COLOR_DARK_GRAY);
 
     
-    WINDOW *win=newwin(47,154,0,0);
-    WINDOW *win_time=newwin(5,150,1,2);
-    WINDOW *win_saturday=newwin(8,150,6,2);
-    WINDOW *win_sunday=newwin(8,150,14,2);
-    WINDOW *win_monday=newwin(8,150,22,2);
-    WINDOW *win_tuesday=newwin(8,150,30,2);
-    WINDOW *win_wensday=newwin(8,150,38,2);
+    WINDOW *win=newwin(47,150,0,0);//for getting information
+    WINDOW *win_time=newwin(5,148,1,2);
+    WINDOW *win_saturday=newwin(8,148,6,2);
+    WINDOW *win_sunday=newwin(8,148,14,2);
+    WINDOW *win_monday=newwin(8,148,22,2);
+    WINDOW *win_tuesday=newwin(8,148,30,2);
+    WINDOW *win_wensday=newwin(8,148,38,2);
+    WINDOW *win_help=newwin(47,40,0,151);
 
     WINDOW *win_array[5]={win_saturday,win_sunday,win_monday,win_tuesday,win_wensday};
 
@@ -182,6 +293,7 @@ void display(struct unit *vaheds)
     wbkgd(win_monday,COLOR_PAIR(1));
     wbkgd(win_tuesday,COLOR_PAIR(1));
     wbkgd(win_wensday,COLOR_PAIR(1));
+    wbkgd(win_help,COLOR_PAIR(1));
 
 
     box(win_time,0,0);
@@ -190,15 +302,15 @@ void display(struct unit *vaheds)
     box(win_monday,0,0);
     box(win_tuesday,0,0);
     box(win_wensday,0,0);
+    box(win_help,0,0);
 
-
-    vaheds[0]=add_unit(win);
 
     mvwprintw(win_saturday,0,2,"Saturday");
     mvwprintw(win_sunday,0,2,"Sunday");
     mvwprintw(win_monday,0,2,"Monday");
     mvwprintw(win_tuesday,0,2,"Tuesday");
     mvwprintw(win_wensday,0,2,"wednesday");
+    mvwprintw(win_help,0,2,"GUIDE");
 
     mvwprintw(win_time,2,20,"7/30 - 9");
     mvwprintw(win_time,2,38,"9 - 10/30");
@@ -208,6 +320,18 @@ void display(struct unit *vaheds)
     mvwprintw(win_time,2,110,"14/30-16");
     mvwprintw(win_time,2,128,"16 - 17/30");
 
+    mvwprintw(win_help,1,1,"q =exit");
+    mvwprintw(win_help,2,1,"a =add new unit");
+    mvwprintw(win_help,3,1,"s =saving the file");
+    mvwprintw(win_help,4,1,"e =enable the editing:");
+    mvwprintw(win_help,5,3,"w =up");
+    mvwprintw(win_help,6,3,"s =down");
+    mvwprintw(win_help,7,3,"f =editing the final exam time");
+    mvwprintw(win_help,8,3,"t =editing the time in week");
+    mvwprintw(win_help,9,3,"d =delete unit");
+    mvwprintw(win_help,10,3,"e =exit edit mode");
+
+
     wrefresh(win);
     wrefresh(win_time);
     wrefresh(win_saturday);
@@ -215,9 +339,19 @@ void display(struct unit *vaheds)
     wrefresh(win_monday);
     wrefresh(win_tuesday);
     wrefresh(win_wensday);
+    wrefresh(win_help);
 
+
+    
 
     int choice=-1;
+
+    if(number_of_units==0)
+    {
+        vaheds = malloc(1*sizeof(struct unit));
+        vaheds[0]=add_unit(win);
+        werase(win);
+    }
 
     while(choice !='q')
     {
@@ -257,6 +391,7 @@ void display(struct unit *vaheds)
         wrefresh(win_monday);
         wrefresh(win_tuesday);
         wrefresh(win_wensday);
+
 
         for(int i=0; i<number_of_units; i++)
         {
@@ -301,7 +436,7 @@ void display(struct unit *vaheds)
 
                 while(choice_edit !='e')
                 {
-                    WINDOW *win_edit=newwin(47,160,0,0);
+                    WINDOW *win_edit=newwin(47,151,0,0);
                     wbkgd(win_edit,COLOR_PAIR(1)); 
                     wrefresh(win_edit);
 
@@ -325,6 +460,25 @@ void display(struct unit *vaheds)
                             highlight_edit--;
                             if(highlight_edit==-1) highlight_edit=0;
                             break;
+                        
+                        case 'n':
+                            echo();
+                            werase(win);
+                            mvwprintw(win,0,0,"enter the new name: ");
+                            edit_name(&vaheds[highlight_edit],win);
+                            werase(win);
+                            noecho();
+                            break;
+                        
+                        case 'r':
+                            echo();
+                            werase(win);
+                            mvwprintw(win,0,0,"enter the new teacher: ");
+                            edit_teacher(&vaheds[highlight_edit],win);
+                            werase(win);
+                            noecho();
+                            break;
+                        
 
                         case 'f':
                             echo();
@@ -349,6 +503,11 @@ void display(struct unit *vaheds)
                 }
                 break;
             
+            case 's':
+                save_to_jason(vaheds,"alltasks.json");
+                break;
+
+            
             
         }
     }
@@ -357,7 +516,9 @@ void display(struct unit *vaheds)
 
 int main()
 {
-    struct unit *vahed=malloc(1*sizeof(struct unit));
+    struct unit *vahed;
+    vahed = load_json("alltasks.json",&number_of_units);
+
 
     display(vahed);
     endwin();

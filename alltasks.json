@@ -1,0 +1,80 @@
+[{
+		"name":	"ap",
+		"teacher":	"Ms.malekie",
+		"final exam":	{
+			"year":	1404,
+			"month":	4,
+			"day":	1,
+			"hour":	8,
+			"minutes":	30
+		},
+		"date":	[{
+				"day name":	1,
+				"time name":	2
+			}, {
+				"day name":	3,
+				"time name":	2
+			}]
+	}, {
+		"name":	"machine language",
+		"teacher":	"Ms.Farzaneh",
+		"final exam":	{
+			"year":	1404,
+			"month":	4,
+			"day":	3,
+			"hour":	10,
+			"minutes":	30
+		},
+		"date":	[{
+				"day name":	1,
+				"time name":	3
+			}, {
+				"day name":	3,
+				"time name":	3
+			}]
+	}, {
+		"name":	"algorithem",
+		"teacher":	"Ms.Farzaneh",
+		"final exam":	{
+			"year":	1404,
+			"month":	3,
+			"day":	31,
+			"hour":	10,
+			"minutes":	30
+		},
+		"date":	[{
+				"day name":	2,
+				"time name":	2
+			}, {
+				"day name":	4,
+				"time name":	2
+			}]
+	}, {
+		"name":	"logical circiut",
+		"teacher":	"Ms.Kashi",
+		"final exam":	{
+			"year":	1404,
+			"month":	4,
+			"day":	10,
+			"hour":	13,
+			"minutes":	0
+		},
+		"date":	[{
+				"day name":	2,
+				"time name":	5
+			}, {
+				"day name":	4,
+				"time name":	5
+			}]
+	}, {
+		"name":	"andisheh",
+		"teacher":	"Mr.jalili",
+		"final exam":	{
+			"year":	0,
+			"month":	0,
+			"day":	0,
+			"hour":	0,
+			"minutes":	0
+		},
+		"date":	[]
+	}]
