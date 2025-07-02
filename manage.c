@@ -270,7 +270,7 @@ void display(struct unit *vaheds)
     initscr();
     start_color();
 
-    init_color(COLOR_DARK_GRAY,300, 400, 600); 
+    init_color(COLOR_DARK_GRAY,300, 400, 500); 
     init_color(COLOR_YELLOW_BROWN, 900, 850, 700);
     init_pair(1, COLOR_YELLOW_BROWN, COLOR_DARK_GRAY);
 
